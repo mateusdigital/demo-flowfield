@@ -18,6 +18,7 @@
 
 //------------------------------------------------------------------------------
 __SOURCES = [
+    "/modules/demolib/modules/external/chroma.js",
     "/modules/demolib/modules/external/perlin.js",
     "/modules/demolib/source/demolib.js",
 ]
@@ -62,7 +63,6 @@ function demo_start(user_canvas)
 }
 
 
-
 //------------------------------------------------------------------------------
 function setup_common(canvas)
 {
@@ -71,9 +71,6 @@ function setup_common(canvas)
 
     set_main_canvas       (canvas);
     install_input_handlers(canvas);
-   
-    set_canvas_fill  ("white");
-    set_canvas_stroke("white");
 
 
     //
@@ -81,10 +78,20 @@ function setup_common(canvas)
     //
 
     C.MAX_PARTICLES = 100;
-    G.particles     = [];
+    
+    G.min_speed            = 100;
+    G.max_speed            = 200;
+    G.min_size             = 1;
+    G.max_size             = 1;
+    G.noise_scale          = 0.001;
+    G.particles            = [];
+    G.draw_color           = chroma("white");
+    G.clear_alpha          = 0.01;
+    G.clear_color          = chroma("black").alpha(G.clear_alpha);
 
     const canvas_w = get_canvas_width ();
     const canvas_h = get_canvas_height();
+
     for(let i = 0; i < C.MAX_PARTICLES; ++i) {
         const x = random_int(canvas_w);
         const y = random_int(canvas_h);
@@ -92,6 +99,8 @@ function setup_common(canvas)
         G.particles.push(p);
     }
 
+    set_canvas_fill("black");
+    clear_canvas();
 
     start_draw_loop(update_demo);
 }
@@ -99,36 +108,49 @@ function setup_common(canvas)
 //------------------------------------------------------------------------------
 function update_demo(dt)
 {
-    clear_canvas();
+
     begin_draw();
 
-        const canvas_w    = get_canvas_width ();
-        const canvas_h    = get_canvas_height();
-        const noise_scale = 0.0001;
+    const canvas_w  = get_canvas_width ();
+    const canvas_h  = get_canvas_height();
+    
+    const v = Math.sin(get_total_time());
+    const h = map(v, -1, 1, 0, 360);
 
-        set_canvas_stroke("red");
-        for(let i = 0; i < G.particles.length; ++i) {
-            const p = G.particles[i];
-            // const x = r * Math.cos((i / G.particles.length) * MATH_2PI); // p.x;
-            // const y = r * Math.sin((i / G.particles.length) * MATH_2PI); // p.x;
-            const n = perlin_noise(p.x * noise_scale, p.y * noise_scale);
-            const a = (n * MATH_2PI);
-            
-            const xx = Math.cos(a) * 50;
-            const yy = Math.sin(a) * 50;
+    G.clear_alpha = map(v, -1, 1, 0.001, 0.05);
+    
+    G.clear_color = chroma("black").alpha(G.clear_alpha); 
+    G.draw_color = chroma.hsl(h, 0.5, 0.5);
+    echo(v, G.clear_alpha, h);
 
-            draw_point(p.x, p.y, 2);
-            draw_line(p.x, p.y, p.x + xx, p.y + yy);
+    clear_canvas     (G.clear_color);
+    set_canvas_stroke(G.draw_color);
+    set_canvas_fill  (G.draw_color);
+    
+    for(let i = 0; i < G.particles.length; ++i) {
+        const p = G.particles[i];
+    
+        const noise = perlin_noise(
+            p.x * G.noise_scale, 
+            p.y * G.noise_scale,
+            G.noise_offset
+        );
 
-            p.x += (xx * dt);
-            p.y += (yy * dt);
-            
-            if(p.x < 0 || p.x >= canvas_w || p.y < 0 || p.y > canvas_h) { 
-                p.x = random_int(canvas_w);
-                p.y = random_int(canvas_h);
-            }
+        const angle = (noise * MATH_2PI);
+        const speed = lerp(noise, G.min_speed, G.max_speed);
+        const size  = lerp(1 - noise, G.min_size,  G.max_size);
 
-            G.particles[i] = p;
+        draw_point(p.x, p.y, size);
+        
+        p.x += Math.cos(angle) * speed * dt;
+        p.y += Math.sin(angle) * speed * dt;
+        
+        if(p.x < 0 || p.x >= canvas_w || p.y < 0 || p.y > canvas_h) { 
+            p.x = random_int(canvas_w);
+            p.y = random_int(canvas_h);
         }
+
+        G.particles[i] = p;
+    }
     end_draw()
 }
