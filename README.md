@@ -51,7 +51,7 @@ As usual, you are **very welcomed** to **share** and **hack** it.
 
 
 ```pwsh
-git clone https://github.com/mateusdigital/flowfield
+git clone https://github.com/mateusdigital/demo-flowfield
 cd flowfield
 ./build-clean.ps1             ##  Cleans temporary directories (_build, _dist, _out) to reset the project state.
 ./build-demo.ps1              ##  Builds the web demo, updates version info, and prepares files.
@@ -65,11 +65,6 @@ cd flowfield
 <!-- ----------------------------------------------------------------------- -->
 ## Running:
 Just open the ```index.html```
-
-<!-- ----------------------------------------------------------------------- -->
-## Thanks to:
-
-- [Fabian Sanglard](https://fabiensanglard.net/about/index.html).
 
 
 <!-- ----------------------------------------------------------------------- -->
